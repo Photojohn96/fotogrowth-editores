@@ -7,10 +7,12 @@ import EditorCard from '@/components/EditorCard'
 import Filters from '@/components/DirectoryFilters'
 import { supabasePublic } from '@/lib/supabase'
 import type { Editor, DirectoryFilters } from '@/lib/types'
-import { PRICE_BANDS } from '@/lib/constants'
+import { computePriceBands } from '@/lib/priceBands'
 
 const EMPTY_FILTERS: DirectoryFilters = {
-  q: '', language: null, video_type: null, price_band: null, turnaround: null, availability: null
+  q: '', language: null, video_type: null,
+  price_band: null, price_unit: null,
+  turnaround: null, availability: null
 }
 
 export default function DirectoryPage() {
@@ -18,8 +20,7 @@ export default function DirectoryPage() {
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<DirectoryFilters>(EMPTY_FILTERS)
 
-  // Fetch approved editors on mount. Sort by availability (available_now first)
-  // then by created_at desc, so the most discoverable editors land at the top.
+  // Fetch approved editors. Sort: available_now → limited → full, then newest first.
   useEffect(() => {
     let alive = true
     supabasePublic
@@ -31,7 +32,6 @@ export default function DirectoryPage() {
         if (error) console.error('[editors fetch]', error)
         const rows = (data as Editor[]) || []
         rows.sort((a, b) => {
-          // Sort: available_now > limited > full, then newest first
           const rank: Record<string, number> = { available_now: 0, limited: 1, full: 2 }
           const ra = rank[a.availability] ?? 99
           const rb = rank[b.availability] ?? 99
@@ -44,7 +44,23 @@ export default function DirectoryPage() {
     return () => { alive = false }
   }, [])
 
-  // Client-side filter — fine for <1K editores. Migrate to server when it grows.
+  // Price bands are computed from the editors that match the unit filter.
+  // If you select "Por video" the bands recalculate from just per-video editors,
+  // so the bands never lie about the underlying distribution. If no unit filter
+  // is set we use the full pool — but the UI hint nudges users to pick one.
+  const priceBands = useMemo(
+    () => computePriceBands(editors, filters.price_unit),
+    [editors, filters.price_unit]
+  )
+
+  // If the selected price_band stops existing after a unit change, clear it.
+  // (Otherwise the filter "sticks" but matches nothing.)
+  useEffect(() => {
+    if (filters.price_band && !priceBands.find(b => b.id === filters.price_band)) {
+      setFilters(f => ({ ...f, price_band: null }))
+    }
+  }, [priceBands, filters.price_band])
+
   const filtered = useMemo(() => {
     return editors.filter(e => {
       if (filters.q.trim()) {
@@ -56,15 +72,14 @@ export default function DirectoryPage() {
       if (filters.video_type && !e.video_types.includes(filters.video_type)) return false
       if (filters.turnaround && e.turnaround !== filters.turnaround) return false
       if (filters.availability && e.availability !== filters.availability) return false
+      if (filters.price_unit && e.price_unit !== filters.price_unit) return false
       if (filters.price_band) {
-        const band = PRICE_BANDS.find(p => p.id === filters.price_band)
-        if (band) {
-          if (e.price_max_usd < band.min || e.price_min_usd > band.max) return false
-        }
+        const band = priceBands.find(b => b.id === filters.price_band)
+        if (band && (e.price_max_usd < band.min || e.price_min_usd > band.max)) return false
       }
       return true
     })
-  }, [editors, filters])
+  }, [editors, filters, priceBands])
 
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
@@ -88,7 +103,12 @@ export default function DirectoryPage() {
       <section className="px-6 py-10">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[280px_1fr] gap-10">
           <aside className="lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2">
-            <Filters filters={filters} onChange={setFilters} resultCount={filtered.length} />
+            <Filters
+              filters={filters}
+              onChange={setFilters}
+              resultCount={filtered.length}
+              priceBands={priceBands}
+            />
           </aside>
 
           <div>
@@ -116,7 +136,7 @@ export default function DirectoryPage() {
 }
 
 function hasFilters(f: DirectoryFilters): boolean {
-  return !!(f.q || f.language || f.video_type || f.price_band || f.turnaround || f.availability)
+  return !!(f.q || f.language || f.video_type || f.price_band || f.price_unit || f.turnaround || f.availability)
 }
 
 function SkeletonGrid() {

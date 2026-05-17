@@ -53,7 +53,17 @@ export type DirectoryFilters = {
   q: string                      // free-text search
   language: string | null
   video_type: string | null
-  price_band: 'any' | 'lt100' | '100-300' | '300-500' | '500-1000' | '1000+' | null
+  price_band: string | null      // dynamic band id like 'q1' | 'q2' | 'q3' | 'q4'
+  price_unit: 'project' | 'video' | null  // filter: only show editors with this unit
   turnaround: string | null
-  availability: string | null    // 'available_now' filter
+  availability: string | null
+}
+
+// A dynamically-computed price band derived from actual editor data
+export type PriceBand = {
+  id: string
+  label: string  // e.g. "$15 – $50"
+  min: number
+  max: number
+  count: number  // how many editors fall in this band (after unit filter)
 }
