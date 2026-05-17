@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
-import { VIDEO_TYPES, LANGUAGES, TURNAROUNDS, PRICE_UNITS, COUNTRIES } from '@/lib/constants'
+import { VIDEO_TYPES, LANGUAGES, TURNAROUNDS, PRICE_UNITS, COUNTRIES, AVAILABILITY_OPTIONS } from '@/lib/constants'
 import type { EditorSubmission } from '@/lib/types'
 
 type Step = 1 | 2 | 3 | 4 | 5
@@ -13,7 +13,8 @@ const EMPTY: EditorSubmission = {
   video_types: [], languages: [], turnaround: '48h',
   price_min_usd: 100, price_max_usd: 300, price_unit: 'project',
   portfolio_url: '', portfolio_extras: [],
-  bio: ''
+  bio: '',
+  availability: 'available_now'
 }
 
 export default function ApplyPage() {
@@ -293,6 +294,25 @@ function Step3({ data, update }: {
           ))}
         </div>
       </Field>
+
+      <Field label="¿Cómo está tu agenda ahora mismo? *">
+        <div className="flex flex-wrap gap-2">
+          {AVAILABILITY_OPTIONS.map(a => (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => update('availability', a.id as EditorSubmission['availability'])}
+              className={`chip ${data.availability === a.id ? 'chip-active' : ''}`}
+            >
+              <span>{a.emoji}</span>
+              <span>{a.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-white/30 mt-2">
+          Los fotógrafos pueden filtrar por disponibilidad — sé honesto, te van a contactar más si estás disponible.
+        </p>
+      </Field>
     </div>
   )
 }
@@ -372,6 +392,7 @@ function Step5({ data }: { data: EditorSubmission }) {
         <ReviewRow label="Idiomas" value={data.languages.join(', ')} />
         <ReviewRow label="Precio" value={`$${data.price_min_usd} – $${data.price_max_usd} ${data.price_unit}`} />
         <ReviewRow label="Entrega" value={data.turnaround} />
+        <ReviewRow label="Disponibilidad" value={data.availability.replace('_', ' ')} />
         <ReviewRow label="Portfolio" value={data.portfolio_url} />
         {data.bio && <ReviewRow label="Bio" value={data.bio} />}
       </div>

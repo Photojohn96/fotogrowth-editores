@@ -2,6 +2,8 @@
 
 export type EditorStatus = 'pending' | 'approved' | 'rejected'
 
+export type EditorAvailability = 'available_now' | 'limited' | 'full'
+
 export type Editor = {
   id: string
   created_at: string
@@ -16,14 +18,14 @@ export type Editor = {
   ig_handle: string | null
 
   // Services
-  video_types: string[]          // ['real_estate','twilight','drone_reels','listing_video','reels']
-  languages: string[]            // ['es','en','pt']
+  video_types: string[]          // ['video_tour','twilight','drone_reels',...]
+  languages: string[]            // ['es','en','pt','fr','it']
   turnaround: string             // '24h' | '48h' | '72h' | '1week' | 'flexible'
 
   // Pricing
   price_min_usd: number          // lower bound
   price_max_usd: number          // upper bound (same as min if fixed)
-  price_unit: 'project' | 'hour' | 'video'
+  price_unit: 'project' | 'video'
 
   // Portfolio
   portfolio_url: string          // primary link (YouTube/Vimeo/Drive/site)
@@ -31,6 +33,9 @@ export type Editor = {
 
   // Bio
   bio: string | null             // 280 char max — short pitch
+
+  // Availability (new)
+  availability: EditorAvailability
 
   // Admin
   approved_at: string | null
@@ -50,4 +55,5 @@ export type DirectoryFilters = {
   video_type: string | null
   price_band: 'any' | 'lt100' | '100-300' | '300-500' | '500-1000' | '1000+' | null
   turnaround: string | null
+  availability: string | null    // 'available_now' filter
 }

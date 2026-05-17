@@ -1,6 +1,6 @@
 'use client'
 
-import { VIDEO_TYPES, LANGUAGES, PRICE_BANDS, TURNAROUNDS } from '@/lib/constants'
+import { VIDEO_TYPES, LANGUAGES, PRICE_BANDS, TURNAROUNDS, AVAILABILITY_OPTIONS } from '@/lib/constants'
 import type { DirectoryFilters } from '@/lib/types'
 
 type Props = {
@@ -15,10 +15,10 @@ export default function Filters({ filters, onChange, resultCount }: Props) {
   }
 
   function clearAll() {
-    onChange({ q: '', language: null, video_type: null, price_band: null, turnaround: null })
+    onChange({ q: '', language: null, video_type: null, price_band: null, turnaround: null, availability: null })
   }
 
-  const hasActiveFilters = !!(filters.language || filters.video_type || filters.price_band || filters.turnaround || filters.q)
+  const hasActiveFilters = !!(filters.language || filters.video_type || filters.price_band || filters.turnaround || filters.availability || filters.q)
 
   return (
     <div className="space-y-5">
@@ -26,7 +26,7 @@ export default function Filters({ filters, onChange, resultCount }: Props) {
       <div>
         <input
           type="text"
-          placeholder="Buscar editor por nombre, ciudad, IG..."
+          placeholder="Buscar por nombre, ciudad, IG..."
           value={filters.q}
           onChange={(e) => onChange({ ...filters, q: e.target.value })}
           className="input"
@@ -36,7 +36,7 @@ export default function Filters({ filters, onChange, resultCount }: Props) {
       {/* Result count + clear */}
       <div className="flex items-center justify-between text-xs">
         <span className="text-white/40">
-          {resultCount} {resultCount === 1 ? 'editor encontrado' : 'editores encontrados'}
+          {resultCount} {resultCount === 1 ? 'editor' : 'editores'}
         </span>
         {hasActiveFilters && (
           <button onClick={clearAll} className="text-fg-azul hover:underline">
@@ -44,6 +44,20 @@ export default function Filters({ filters, onChange, resultCount }: Props) {
           </button>
         )}
       </div>
+
+      {/* Availability — primary filter, lo más util */}
+      <FilterGroup title="Disponibilidad">
+        {AVAILABILITY_OPTIONS.map(a => (
+          <button
+            key={a.id}
+            onClick={() => toggle('availability', a.id)}
+            className={`chip ${filters.availability === a.id ? 'chip-active' : ''}`}
+          >
+            <span>{a.emoji}</span>
+            <span>{a.label}</span>
+          </button>
+        ))}
+      </FilterGroup>
 
       {/* Type chips */}
       <FilterGroup title="Tipo de video">

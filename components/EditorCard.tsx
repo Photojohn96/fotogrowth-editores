@@ -1,33 +1,50 @@
 import Link from 'next/link'
 import type { Editor } from '@/lib/types'
-import { VIDEO_TYPES, LANGUAGES, TURNAROUNDS, labelOf } from '@/lib/constants'
+import { VIDEO_TYPES, LANGUAGES, TURNAROUNDS, AVAILABILITY_OPTIONS, labelOf } from '@/lib/constants'
 
 function priceLabel(e: Editor): string {
-  const unit = e.price_unit === 'project' ? 'proyecto' : e.price_unit === 'video' ? 'video' : 'hora'
+  const unit = e.price_unit === 'project' ? 'proyecto' : 'video'
   if (e.price_min_usd === e.price_max_usd) return `$${e.price_min_usd} / ${unit}`
   return `$${e.price_min_usd} – $${e.price_max_usd} / ${unit}`
 }
 
+// Map availability to Tailwind class color so the badge stays in sync with the
+// constant's `color` token without burying it in conditional JSX everywhere.
+const AVAILABILITY_CLASSES: Record<string, string> = {
+  green: 'bg-green-500/15 text-green-400 border-green-500/30',
+  amber: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  red:   'bg-red-500/15 text-red-400 border-red-500/30'
+}
+
 export default function EditorCard({ editor }: { editor: Editor }) {
+  const avail = AVAILABILITY_OPTIONS.find(a => a.id === editor.availability)
+
   return (
     <Link
       href={`/editor/${editor.slug}`}
       className="group block bg-white/[0.03] border border-white/8 rounded-2xl p-5 hover:bg-white/[0.05] hover:border-white/15 transition-colors"
     >
-      {/* Header */}
+      {/* Header: name + availability badge */}
       <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="text-white font-semibold text-base group-hover:text-fg-azul transition-colors">
+        <div className="min-w-0">
+          <h3 className="text-white font-semibold text-base group-hover:text-fg-azul transition-colors truncate">
             {editor.name}
           </h3>
-          <p className="text-xs text-white/40 mt-0.5">
+          <p className="text-xs text-white/40 mt-0.5 truncate">
             {editor.country}{editor.city ? ` · ${editor.city}` : ''}
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-semibold text-white">{priceLabel(editor)}</p>
-          <p className="text-[10px] text-white/40 mt-0.5">{labelOf(TURNAROUNDS, editor.turnaround)}</p>
-        </div>
+        {avail && (
+          <span className={`text-[10px] uppercase tracking-wider border rounded-full px-2 py-0.5 flex-shrink-0 ${AVAILABILITY_CLASSES[avail.color]}`}>
+            <span className="mr-1">{avail.emoji}</span>{avail.label}
+          </span>
+        )}
+      </div>
+
+      {/* Price + turnaround row */}
+      <div className="flex items-baseline justify-between mb-3 pb-3 border-b border-white/5">
+        <p className="text-sm font-semibold text-white">{priceLabel(editor)}</p>
+        <p className="text-[10px] text-white/40">{labelOf(TURNAROUNDS, editor.turnaround)}</p>
       </div>
 
       {/* Bio */}

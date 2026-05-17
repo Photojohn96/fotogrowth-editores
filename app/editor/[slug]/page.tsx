@@ -3,7 +3,13 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { supabasePublic } from '@/lib/supabase'
 import type { Editor } from '@/lib/types'
-import { VIDEO_TYPES, LANGUAGES, TURNAROUNDS, labelOf } from '@/lib/constants'
+import { VIDEO_TYPES, LANGUAGES, TURNAROUNDS, AVAILABILITY_OPTIONS, labelOf } from '@/lib/constants'
+
+const AVAIL_CLASSES: Record<string, string> = {
+  green: 'bg-green-500/15 text-green-400 border-green-500/30',
+  amber: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  red:   'bg-red-500/15 text-red-400 border-red-500/30'
+}
 
 // Server component — fetches via service role-less anon client + relies on RLS
 // (approved-only) to filter. If the row isn't approved, query returns nothing → 404.
@@ -32,10 +38,12 @@ export default async function EditorDetailPage({ params }: { params: Promise<{ s
   const waLink = waNumber ? `https://wa.me/${waNumber}?text=${waMessage}` : null
 
   function priceLabel(): string {
-    const unit = editor.price_unit === 'project' ? 'proyecto' : editor.price_unit === 'video' ? 'video' : 'hora'
+    const unit = editor.price_unit === 'project' ? 'proyecto' : 'video'
     if (editor.price_min_usd === editor.price_max_usd) return `$${editor.price_min_usd} USD / ${unit}`
     return `$${editor.price_min_usd} – $${editor.price_max_usd} USD / ${unit}`
   }
+
+  const avail = AVAILABILITY_OPTIONS.find(a => a.id === editor.availability)
 
   return (
     <main className="min-h-screen bg-[#0A0A0A]">
@@ -50,7 +58,14 @@ export default async function EditorDetailPage({ params }: { params: Promise<{ s
         {/* Header */}
         <div className="mb-8">
           <p className="section-label mb-3">Editor de video · Bienes raíces</p>
-          <h1 className="text-4xl font-bold tracking-tight mb-2 gradient-text">{editor.name}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-2">
+            <h1 className="text-4xl font-bold tracking-tight gradient-text">{editor.name}</h1>
+            {avail && (
+              <span className={`text-xs uppercase tracking-wider border rounded-full px-3 py-1 ${AVAIL_CLASSES[avail.color]}`}>
+                <span className="mr-1">{avail.emoji}</span>{avail.label}
+              </span>
+            )}
+          </div>
           <p className="text-white/50">
             {editor.country}{editor.city ? ` · ${editor.city}` : ''}
             {editor.ig_handle && <> · <a href={`https://instagram.com/${editor.ig_handle}`} target="_blank" rel="noopener" className="text-fg-azul hover:underline">@{editor.ig_handle}</a></>}

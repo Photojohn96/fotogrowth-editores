@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     if (!Array.isArray(body.languages) || body.languages.length === 0) return bad('select at least 1 language')
     if (!body.portfolio_url?.startsWith('http')) return bad('portfolio_url must be a valid URL')
     if (body.price_min_usd < 0 || body.price_max_usd < body.price_min_usd) return bad('invalid price range')
+    if (body.availability && !['available_now','limited','full'].includes(body.availability)) return bad('invalid availability')
 
     // Sanitize bio length server-side too — client maxLength can be tampered.
     const bio = body.bio?.slice(0, 280) ?? null
@@ -42,7 +43,8 @@ export async function POST(req: Request) {
       price_unit: body.price_unit,
       portfolio_url: body.portfolio_url.trim(),
       portfolio_extras: body.portfolio_extras?.filter(Boolean) || null,
-      bio
+      bio,
+      availability: body.availability || 'available_now'
     })
 
     if (error) {
